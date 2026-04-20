@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 
@@ -37,10 +37,10 @@ const ContactPage = () => {
         setShowThankYou(true);
     };
 
-    const handleContinue = () => {
+    const handleContinue = useCallback(() => {
         setForm(emptyForm);
         setShowThankYou(false);
-    };
+    }, []);
 
     useEffect(() => {
         if (!showThankYou) return;
@@ -76,7 +76,7 @@ const ContactPage = () => {
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [showThankYou]);
+    }, [showThankYou, handleContinue]);
 
     return (
         <div className="app">
