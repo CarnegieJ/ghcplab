@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 
@@ -22,6 +22,8 @@ const ContactPage = () => {
     const [form, setForm] = useState<ContactForm>(emptyForm);
     const [showThankYou, setShowThankYou] = useState(false);
     const [submittedName, setSubmittedName] = useState('');
+    const modalRef = useRef<HTMLDivElement>(null);
+    const continueRef = useRef<HTMLButtonElement>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -40,6 +42,42 @@ const ContactPage = () => {
         setShowThankYou(false);
     };
 
+    useEffect(() => {
+        if (!showThankYou) return;
+
+        // Focus the Continue button when modal opens
+        continueRef.current?.focus();
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                handleContinue();
+                return;
+            }
+            // Focus trap: keep Tab/Shift+Tab inside the modal
+            if (e.key === 'Tab' && modalRef.current) {
+                const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    }
+                } else {
+                    if (document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [showThankYou]);
+
     return (
         <div className="app">
             <Header />
@@ -47,7 +85,7 @@ const ContactPage = () => {
                 <div className="contact-container">
                     <h2>Contact Us</h2>
                     <p className="contact-intro">We'd love to hear from you! Fill out the form below and we'll get back to you as soon as possible.</p>
-                    <form onSubmit={handleSubmit} className="contact-form" noValidate>
+                    <form onSubmit={handleSubmit} className="contact-form">
                         <div className="contact-form-row">
                             <div className="contact-form-group">
                                 <label htmlFor="firstName">First Name <span aria-hidden="true">*</span></label>
@@ -126,7 +164,7 @@ const ContactPage = () => {
             <Footer />
 
             {showThankYou && (
-                <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="thankyou-title">
+                <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="thankyou-title" ref={modalRef}>
                     <div className="modal-content contact-thankyou-modal">
                         <h2 id="thankyou-title">Thank You, {submittedName}!</h2>
                         <p>
@@ -135,9 +173,9 @@ const ContactPage = () => {
                         </p>
                         <div className="contact-modal-actions">
                             <button
+                                ref={continueRef}
                                 className="contact-continue-btn"
                                 onClick={handleContinue}
-                                autoFocus
                             >
                                 Continue
                             </button>
